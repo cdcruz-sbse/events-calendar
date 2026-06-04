@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+<title>Events Calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   THEME TOKENS  (deep "ink blue" + gold accent system)
+   ============================================================ */
+:root{
+  --c-primary:#003c71;        /* ink blue */
+  --c-primary-600:#0a4a85;
+  --c-primary-050:#e9f0f8;
+  --c-accent:#f3c20d;         /* gold */
+  --c-accent-soft:#fdf3c4;
+  --c-accent-ink:#6b5300;
+  --c-text:#14253b;
+  --c-muted:#5b6b7d;
+  --c-border:#dde5ee;
+  --c-border-strong:#c6d2e0;
+  --c-surface:#ffffff;
+  --c-surface-2:#f5f8fc;
+  --c-danger:#b3261e;
+  --radius:6px;               /* sharp / modern */
+  --radius-lg:10px;
+  --shadow-sm:0 1px 2px rgba(10,37,64,.06), 0 1px 3px rgba(10,37,64,.08);
+  --shadow-md:0 6px 24px rgba(10,37,64,.14);
+  --shadow-lg:0 18px 50px rgba(10,37,64,.22);
+  --font-head:'Sora', system-ui, sans-serif;
+  --font-body:'DM Sans', system-ui, sans-serif;
+  --fs-sm:clamp(.74rem,1.6vw,.8rem);
+  --fs-base:clamp(.86rem,2vw,.94rem);
+  --fs-lg:clamp(1rem,2.4vw,1.12rem);
+  --fs-xl:clamp(1.15rem,3.2vw,1.45rem);
+}
+
+/* ============================================================
+   RESET / EMBED-FRIENDLY BASE
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box}
+html,body{
+  background:transparent !important;
+  margin:0;padding:0;
+  font-family:var(--font-body);
+  color:var(--c-text);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit}
+
+/* ============================================================
+   WIDGET SHELL
+   ============================================================ */
+.cal{
+  width:100%;
+  max-width:920px;
+  margin:0 auto;
+  background:var(--c-surface);
+  border:1px solid var(--c-border);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-sm);
+  overflow:hidden;
+}
+
+/* ---- Top bar ---- */
+.cal__top{
+  display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
+  padding:clamp(.7rem,2.5vw,1.05rem) clamp(.8rem,3vw,1.25rem);
+  background:
+    linear-gradient(180deg,var(--c-primary) 0%,var(--c-primary-600) 100%);
+  color:#fff;
+  position:relative;
+}
+.cal__top::after{ /* gold hairline accent */
+  content:"";position:absolute;left:0;right:0;bottom:0;height:3px;
+  background:var(--c-accent);
+}
+.cal__title{
+  font-family:var(--font-head);font-weight:700;
+  font-size:var(--fs-xl);letter-spacing:-.01em;line-height:1.1;
+  margin:0;display:flex;align-items:center;gap:.55rem;flex:1 1 auto;min-width:0;
+}
+.cal__title .dot{width:.55rem;height:.55rem;border-radius:2px;background:var(--c-accent);flex:none}
+
+/* nav cluster */
+.nav{display:flex;align-items:center;gap:.3rem}
+.iconbtn{
+  width:38px;height:38px;display:grid;place-items:center;
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);
+  color:#fff;border-radius:var(--radius);transition:.15s;
+}
+.iconbtn:hover{background:rgba(255,255,255,.24)}
+.iconbtn:focus-visible{outline:2px solid var(--c-accent);outline-offset:2px}
+.period{
+  font-family:var(--font-head);font-weight:600;font-size:var(--fs-base);
+  min-width:9.5ch;text-align:center;white-space:nowrap;
+}
+.btn{
+  border:1px solid transparent;border-radius:var(--radius);
+  padding:.5rem .8rem;font-size:var(--fs-sm);font-weight:600;
+  display:inline-flex;align-items:center;gap:.4rem;min-height:38px;transition:.15s;
+}
+.btn:focus-visible{outline:2px solid var(--c-accent);outline-offset:2px}
+.btn--ghost{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.22);color:#fff}
+.btn--ghost:hover{background:rgba(255,255,255,.24)}
+.btn--gold{background:var(--c-accent);color:#1d1600;border-color:var(--c-accent)}
+.btn--gold:hover{filter:brightness(1.06)}
+.btn--primary{background:var(--c-primary);color:#fff;border-color:var(--c-primary)}
+.btn--primary:hover{background:var(--c-primary-600)}
+.btn--outline{background:#fff;color:var(--c-primary);border-color:var(--c-border-strong)}
+.btn--outline:hover{background:var(--c-surface-2)}
+.btn--danger{background:#fff;color:var(--c-danger);border-color:#e7c4c1}
+.btn--danger:hover{background:#fdf1f0}
+
+/* ---- Control row (toggle + new) ---- */
+.cal__controls{
+  display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap;
+  padding:.7rem clamp(.8rem,3vw,1.25rem);
+  border-bottom:1px solid var(--c-border);background:var(--c-surface-2);
+}
+.toggle{
+  display:inline-flex;background:#fff;border:1px solid var(--c-border-strong);
+  border-radius:var(--radius);overflow:hidden;
+}
+.toggle button{
+  border:0;background:transparent;color:var(--c-muted);
+  padding:.5rem .95rem;font-size:var(--fs-sm);font-weight:600;min-height:38px;
+  display:inline-flex;align-items:center;gap:.4rem;position:relative;transition:.15s;
+}
+.toggle button[aria-pressed="true"]{color:var(--c-primary);background:var(--c-primary-050)}
+.toggle button[aria-pressed="true"]::after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--c-accent);
+}
+.toggle button+button{border-left:1px solid var(--c-border)}
+
+/* legend */
+.legend{display:flex;align-items:center;gap:.9rem;flex-wrap:wrap;font-size:var(--fs-sm);color:var(--c-muted)}
+.legend span{display:inline-flex;align-items:center;gap:.35rem}
+.swatch{width:.7rem;height:.7rem;border-radius:2px;flex:none}
+.swatch--ev{background:var(--c-primary)}
+.swatch--hol{background:var(--c-accent)}
+
+/* ============================================================
+   MONTH GRID
+   ============================================================ */
+.grid-wrap{padding:clamp(.5rem,2vw,.9rem)}
+.dow{
+  display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;
+}
+.dow span{
+  text-align:center;font-size:var(--fs-sm);font-weight:600;color:var(--c-muted);
+  padding:.3rem 0;text-transform:uppercase;letter-spacing:.04em;
+}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cell{
+  background:var(--c-surface-2);border:1px solid var(--c-border);
+  border-radius:var(--radius);min-height:96px;padding:.3rem;
+  display:flex;flex-direction:column;gap:3px;text-align:left;
+  transition:.12s;position:relative;overflow:hidden;
+}
+.cell:hover{border-color:var(--c-primary-600);background:#fff}
+.cell:focus-visible{outline:2px solid var(--c-primary);outline-offset:1px}
+.cell--out{opacity:.45}
+.cell--today .daynum{
+  background:var(--c-accent);color:#1d1600;border-radius:50%;
+  width:1.7em;height:1.7em;display:grid;place-items:center;font-weight:700;
+}
+.daynum{font-size:var(--fs-sm);font-weight:600;color:var(--c-text);align-self:flex-start;line-height:1.7em;min-height:1.7em;padding:0 .15em}
+.chips{display:flex;flex-direction:column;gap:2px;overflow:hidden}
+.chip{
+  font-size:.7rem;line-height:1.2;border-radius:3px;padding:2px 5px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;
+  border:0;width:100%;
+}
+.chip--ev{background:var(--c-primary-050);color:var(--c-primary);border-left:3px solid var(--c-primary)}
+.chip--ev:hover{background:#dbe7f4}
+.chip--hol{background:var(--c-accent-soft);color:var(--c-accent-ink);border-left:3px solid var(--c-accent)}
+.chip__time{font-weight:700;opacity:.85}
+.more{font-size:.68rem;color:var(--c-muted);font-weight:600;padding-left:2px}
+.dots{display:none;gap:3px;flex-wrap:wrap;padding-left:2px}
+.dots i{width:6px;height:6px;border-radius:50%;display:block}
+.dots .d-ev{background:var(--c-primary)}
+.dots .d-hol{background:var(--c-accent)}
+
+/* ============================================================
+   LIST VIEW
+   ============================================================ */
+.list{padding:clamp(.6rem,2.5vw,1rem) clamp(.8rem,3vw,1.25rem)}
+.list__empty{color:var(--c-muted);text-align:center;padding:2.5rem 1rem;font-size:var(--fs-base)}
+.daygroup+.daygroup{margin-top:1.1rem}
+.daygroup__head{
+  font-family:var(--font-head);font-weight:600;font-size:var(--fs-sm);
+  color:var(--c-primary);text-transform:uppercase;letter-spacing:.05em;
+  padding:.2rem 0 .5rem;border-bottom:1px solid var(--c-border);margin-bottom:.5rem;
+  display:flex;align-items:baseline;gap:.5rem;
+}
+.daygroup__head .num{font-size:var(--fs-lg);font-weight:700;color:var(--c-text);font-variant-numeric:tabular-nums}
+.row{
+  display:flex;gap:.8rem;padding:.65rem .2rem;border-radius:var(--radius);
+  align-items:flex-start;width:100%;text-align:left;border:0;background:transparent;transition:.12s;
+}
+.row:hover{background:var(--c-surface-2)}
+.row__bar{width:4px;align-self:stretch;border-radius:3px;flex:none;background:var(--c-primary)}
+.row__bar--hol{background:var(--c-accent)}
+.row__time{min-width:7.5ch;font-size:var(--fs-sm);font-weight:600;color:var(--c-muted);padding-top:.1rem;font-variant-numeric:tabular-nums}
+.row__body{min-width:0;flex:1}
+.row__title{font-weight:600;font-size:var(--fs-base);color:var(--c-text);display:flex;align-items:center;gap:.45rem;flex-wrap:wrap}
+.row__meta{font-size:var(--fs-sm);color:var(--c-muted);margin-top:.15rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.tag{
+  font-size:.68rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
+  padding:1px 6px;border-radius:3px;display:inline-flex;align-items:center;gap:.3rem;
+}
+.tag--virtual{background:#e3f0ff;color:#0a4a85}
+.tag--inperson{background:#eef6e9;color:#3d6b1f}
+.tag--rec{background:var(--c-accent-soft);color:var(--c-accent-ink)}
+.tag--hol{background:var(--c-accent-soft);color:var(--c-accent-ink)}
+
+/* ============================================================
+   MODAL / FORM
+   ============================================================ */
+.overlay{
+  position:fixed;inset:0;background:rgba(10,25,45,.55);
+  display:none;align-items:flex-start;justify-content:center;
+  padding:clamp(.5rem,4vw,2.5rem);z-index:50;overflow-y:auto;
+  backdrop-filter:blur(2px);
+}
+.overlay.open{display:flex;animation:fade .18s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.modal{
+  background:var(--c-surface);border-radius:var(--radius-lg);
+  width:100%;max-width:560px;box-shadow:var(--shadow-lg);
+  animation:rise .2s cubic-bezier(.2,.7,.3,1);overflow:hidden;
+}
+@keyframes rise{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal__head{
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  padding:1rem 1.25rem;border-bottom:1px solid var(--c-border);
+  background:var(--c-surface);position:sticky;top:0;
+}
+.modal__head h2{font-family:var(--font-head);font-weight:700;font-size:var(--fs-lg);margin:0;color:var(--c-primary)}
+.x{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--c-border);background:#fff;border-radius:var(--radius);color:var(--c-muted)}
+.x:hover{background:var(--c-surface-2);color:var(--c-text)}
+.modal__body{padding:1.1rem 1.25rem 1.35rem}
+.modal__foot{
+  display:flex;gap:.6rem;justify-content:space-between;align-items:center;flex-wrap:wrap;
+  padding:1rem 1.25rem;border-top:1px solid var(--c-border);background:var(--c-surface-2);
+}
+.modal__foot .right{display:flex;gap:.6rem;flex-wrap:wrap}
+
+/* form fields */
+.field{margin-bottom:.9rem}
+.field label{display:block;font-size:var(--fs-sm);font-weight:600;color:var(--c-text);margin-bottom:.3rem}
+.field .hint{font-weight:400;color:var(--c-muted)}
+.control{
+  width:100%;padding:.6rem .7rem;font-size:var(--fs-base);color:var(--c-text);
+  background:#fff;border:1px solid var(--c-border-strong);border-radius:var(--radius);
+  min-height:42px;transition:.12s;
+}
+.control:focus{outline:0;border-color:var(--c-primary);box-shadow:0 0 0 3px var(--c-primary-050)}
+textarea.control{min-height:74px;resize:vertical;line-height:1.4}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+.row2--single{grid-template-columns:1fr}
+.seg{display:inline-flex;border:1px solid var(--c-border-strong);border-radius:var(--radius);overflow:hidden}
+.seg button{border:0;background:#fff;color:var(--c-muted);padding:.55rem .9rem;font-size:var(--fs-sm);font-weight:600;min-height:42px;display:inline-flex;align-items:center;gap:.4rem;transition:.12s}
+.seg button[aria-pressed="true"]{background:var(--c-primary);color:#fff}
+.seg button+button{border-left:1px solid var(--c-border)}
+.switch{display:inline-flex;align-items:center;gap:.55rem;cursor:pointer;user-select:none}
+.switch input{position:absolute;opacity:0;pointer-events:none}
+.track{width:42px;height:24px;border-radius:999px;background:var(--c-border-strong);position:relative;transition:.15s;flex:none}
+.track::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:var(--shadow-sm);transition:.15s}
+.switch input:checked+.track{background:var(--c-primary)}
+.switch input:checked+.track::after{transform:translateX(18px)}
+.switch input:focus-visible+.track{outline:2px solid var(--c-accent);outline-offset:2px}
+.hide{display:none !important}
+.err{border-color:var(--c-danger) !important;box-shadow:0 0 0 3px rgba(179,38,30,.12) !important}
+.errmsg{color:var(--c-danger);font-size:var(--fs-sm);margin-top:.3rem;display:none}
+.errmsg.show{display:block}
+
+/* detail modal */
+.detail dl{margin:0}
+.detail .drow{display:flex;gap:.7rem;padding:.55rem 0;border-bottom:1px solid var(--c-border);align-items:flex-start}
+.detail .drow:last-child{border-bottom:0}
+.detail dt{flex:none;width:90px;color:var(--c-muted);font-size:var(--fs-sm);font-weight:600;padding-top:1px}
+.detail dd{margin:0;font-size:var(--fs-base);color:var(--c-text);word-break:break-word;min-width:0}
+.detail dd a{color:var(--c-primary);font-weight:600}
+
+.ico{width:1em;height:1em;flex:none;vertical-align:-.12em}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width:600px){
+  .cell{min-height:62px}
+  .chips{display:none}
+  .dots{display:flex}
+  .daynum{align-self:center}
+  .period{min-width:auto}
+  .legend{display:none}
+  .row2{grid-template-columns:1fr}
+  .cal__title{flex-basis:100%;order:-1;margin-bottom:.2rem}
+}
+@media (max-width:380px){
+  .cell{min-height:54px;padding:.2rem}
+  .dow span{font-size:.66rem}
+}
+@media (max-width:520px){
+  .overlay{padding:0;align-items:stretch}
+  .modal{max-width:none;border-radius:0;min-height:100%}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition:none !important}
+}
+</style>
+</head>
+<body>
+<main class="cal" id="cal" aria-label="Events calendar">
+
+  <!-- TOP BAR -->
+  <header class="cal__top">
+    <h1 class="cal__title"><span class="dot"></span>Events Calendar</h1>
+    <div class="nav" role="group" aria-label="Month navigation">
+      <button class="iconbtn" id="prev" aria-label="Previous month">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="period" id="period">Month</span>
+      <button class="iconbtn" id="next" aria-label="Next month">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <button class="btn btn--ghost" id="today">Today</button>
+    </div>
+  </header>
+
+  <!-- CONTROLS -->
+  <div class="cal__controls">
+    <div class="toggle" role="group" aria-label="Switch view">
+      <button id="viewCal" aria-pressed="true">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
+        Calendar
+      </button>
+      <button id="viewList" aria-pressed="false">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+        List
+      </button>
+    </div>
+    <div class="legend" aria-hidden="true">
+      <span><i class="swatch swatch--ev"></i>Event</span>
+      <span><i class="swatch swatch--hol"></i>US holiday</span>
+    </div>
+    <button class="btn btn--gold" id="newBtn">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      New event
+    </button>
+  </div>
+
+  <!-- CALENDAR VIEW -->
+  <section id="calView" class="grid-wrap" aria-label="Month grid">
+    <div class="dow"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <!-- LIST VIEW -->
+  <section id="listView" class="list hide" aria-label="Upcoming events list"></section>
+</main>
+
+<!-- FORM MODAL -->
+<div class="overlay" id="formOverlay" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+  <div class="modal">
+    <div class="modal__head">
+      <h2 id="formTitle">New event</h2>
+      <button class="x" id="formClose" aria-label="Close">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal__body">
+      <div class="field">
+        <label for="f-name">Event name</label>
+        <input class="control" id="f-name" type="text" maxlength="120" placeholder="e.g. New Student Orientation" />
+        <div class="errmsg" id="e-name">Please enter an event name.</div>
+      </div>
+
+      <div class="field">
+        <label for="f-desc">Description <span class="hint">(optional)</span></label>
+        <textarea class="control" id="f-desc" maxlength="2000" placeholder="Add details, agenda, who should attend…"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Format</label>
+        <div class="seg" role="group" aria-label="Event format">
+          <button type="button" id="modeVirtual" aria-pressed="true">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
+            Virtual
+          </button>
+          <button type="button" id="modeInperson" aria-pressed="false">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            In-person
+          </button>
+        </div>
+      </div>
+
+      <div class="field" id="wrapLink">
+        <label for="f-link">Meeting link</label>
+        <input class="control" id="f-link" type="url" placeholder="https://…" />
+        <div class="errmsg" id="e-link">Enter a valid URL (https://…).</div>
+      </div>
+      <div class="field hide" id="wrapAddr">
+        <label for="f-addr">Address</label>
+        <input class="control" id="f-addr" type="text" maxlength="200" placeholder="Building, street, city, state" />
+        <div class="errmsg" id="e-addr">Please enter an address.</div>
+      </div>
+
+      <div class="field">
+        <label class="switch">
+          <input type="checkbox" id="f-allday" />
+          <span class="track"></span>
+          <span>All-day event</span>
+        </label>
+      </div>
+
+      <div class="field">
+        <label>Starts</label>
+        <div class="row2" id="rowStart">
+          <input class="control" id="f-sdate" type="date" />
+          <input class="control" id="f-stime" type="time" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Ends</label>
+        <div class="row2" id="rowEnd">
+          <input class="control" id="f-edate" type="date" />
+          <input class="control" id="f-etime" type="time" />
+        </div>
+        <div class="errmsg" id="e-range">End must be after start.</div>
+      </div>
+
+      <div class="field">
+        <label for="f-recur">Repeats</label>
+        <div class="row2">
+          <select class="control" id="f-recur">
+            <option value="none">Does not repeat</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="quarterly">Quarterly</option>
+          </select>
+          <input class="control" id="f-until" type="date" aria-label="Repeat until" title="Repeat until (optional)" />
+        </div>
+        <div class="hint" style="font-size:var(--fs-sm);color:var(--c-muted);margin-top:.3rem" id="untilHint"></div>
+      </div>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--danger hide" id="formDelete">Delete</button>
+      <div class="right">
+        <button class="btn btn--outline" id="formCancel">Cancel</button>
+        <button class="btn btn--primary" id="formSave">Save event</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="overlay" id="detailOverlay" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+  <div class="modal">
+    <div class="modal__head">
+      <h2 id="detailTitle">Event</h2>
+      <button class="x" id="detailClose" aria-label="Close">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal__body detail" id="detailBody"></div>
+    <div class="modal__foot" id="detailFoot"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+(function(){
+/* =====================================================================
+   DATE HELPERS
+   ===================================================================== */
+const MS_DAY = 86400000;
+const pad = n => String(n).padStart(2,"0");
+const ymd = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const parseYMD = s => { const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); };
+function startOfDay(d){ return new Date(d.getFullYear(),d.getMonth(),d.getDate()); }
+function addDays(d,n){ const x=new Date(d.getTime()); x.setDate(x.getDate()+n); return x; }
+function addMonths(d,n){
+  const day=d.getDate(); const x=new Date(d.getFullYear(),d.getMonth(),1,d.getHours(),d.getMinutes());
+  x.setMonth(x.getMonth()+n);
+  const dim=new Date(x.getFullYear(),x.getMonth()+1,0).getDate();
+  x.setDate(Math.min(day,dim));
+  return x;
+}
+function nthWeekday(y,m,wd,n){ const f=new Date(y,m,1); const off=(wd-f.getDay()+7)%7; return new Date(y,m,1+off+(n-1)*7); }
+function lastWeekday(y,m,wd){ const l=new Date(y,m+1,0); const off=(l.getDay()-wd+7)%7; return new Date(y,m,l.getDate()-off); }
+
+const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MONTHS_SHORT=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const DAYS_SHORT=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+function fmtTime(d){
+  let h=d.getHours(), m=d.getMinutes(); const ap=h<12?"AM":"PM";
+  h=h%12; if(h===0)h=12;
+  return m? `${h}:${pad(m)} ${ap}` : `${h} ${ap}`;
+}
+
+/* =====================================================================
+   US FEDERAL HOLIDAYS  (computed — auto-scales to any year, no network)
+   ===================================================================== */
+function getUSHolidays(year){
+  return [
+    {date:`${year}-01-01`, name:"New Year's Day"},
+    {date:ymd(nthWeekday(year,0,1,3)), name:"Martin Luther King Jr. Day"},
+    {date:ymd(nthWeekday(year,1,1,3)), name:"Presidents' Day"},
+    {date:ymd(lastWeekday(year,4,1)), name:"Memorial Day"},
+    {date:`${year}-06-19`, name:"Juneteenth"},
+    {date:`${year}-07-04`, name:"Independence Day"},
+    {date:ymd(nthWeekday(year,8,1,1)), name:"Labor Day"},
+    {date:ymd(nthWeekday(year,9,1,2)), name:"Columbus Day"},
+    {date:`${year}-11-11`, name:"Veterans Day"},
+    {date:ymd(nthWeekday(year,10,4,4)), name:"Thanksgiving Day"},
+    {date:`${year}-12-25`, name:"Christmas Day"},
+  ];
+}
+const _holCache={};
+function holidaysForYear(y){ return _holCache[y] || (_holCache[y]=getUSHolidays(y)); }
+function holidayOn(dateStr){
+  const y=Number(dateStr.slice(0,4));
+  return holidaysForYear(y).find(h=>h.date===dateStr) || null;
+}
+
+/* =====================================================================
+   STATE  (in-memory only — resets on reload, by design)
+   ===================================================================== */
+let events = [];          // {id,name,description,mode,link,address,allDay,start,end,recurrence,until}
+let uid = 1;
+let view = "calendar";    // 'calendar' | 'list'
+const today = startOfDay(new Date());
+let cursor = new Date(today.getFullYear(), today.getMonth(), 1);
+let editingId = null;
+
+/* seed a couple of sample events so the widget isn't empty on first load */
+(function seed(){
+  const t=new Date();
+  const d1=new Date(t.getFullYear(),t.getMonth(),Math.min(t.getDate()+2,28),14,0);
+  const d1e=new Date(d1.getTime()+90*60000);
+  events.push({id:uid++,name:"Weekly Team Standup",description:"Quick sync on priorities and blockers.",mode:"virtual",link:"https://example.com/meet",address:"",allDay:false,start:isoLocal(d1),end:isoLocal(d1e),recurrence:"weekly",until:""});
+  const d2=new Date(t.getFullYear(),t.getMonth(),Math.min(t.getDate()+9,28));
+  events.push({id:uid++,name:"Campus Open House",description:"Tours, info sessions, and Q&A.",mode:"inperson",link:"",address:"2500 North River Rd, Manchester, NH",allDay:true,start:ymd(d2),end:ymd(d2),recurrence:"none",until:""});
+})();
+
+function isoLocal(d){ return `${ymd(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+function evStart(ev){ return ev.allDay ? parseYMD(ev.start) : new Date(ev.start); }
+function evEnd(ev){ return ev.allDay ? parseYMD(ev.end) : new Date(ev.end); }
+
+/* =====================================================================
+   RECURRENCE EXPANSION
+   Returns occurrence start Dates within [winStart, winEnd] (inclusive).
+   ===================================================================== */
+function expand(ev, winStart, winEnd){
+  const out=[]; const base=evStart(ev);
+  const until = ev.until ? addDays(parseYMD(ev.until),1) : null; // inclusive day -> exclusive next
+  if(ev.recurrence==="none"){
+    if(base>=winStart && base<=winEnd) out.push(new Date(base.getTime()));
+    return out;
+  }
+  let cur=new Date(base.getTime()), guard=0;
+  while(cur<=winEnd && guard<730){
+    if(until && cur>=until) break;
+    if(cur>=winStart) out.push(new Date(cur.getTime()));
+    if(ev.recurrence==="weekly") cur=addDays(cur,7);
+    else if(ev.recurrence==="monthly") cur=addMonths(cur,1);
+    else if(ev.recurrence==="quarterly") cur=addMonths(cur,3);
+    else break;
+    guard++;
+  }
+  return out;
+}
+/* duration in ms (for placing occurrence end) */
+function durationMs(ev){ return Math.max(0, evEnd(ev).getTime()-evStart(ev).getTime()); }
+
+/* Build a map dateStr -> [{type:'event'|'holiday', ...}] for a window */
+function occurrencesByDate(winStart, winEnd){
+  const map={};
+  const push=(ds,item)=>{ (map[ds]||(map[ds]=[])).push(item); };
+  // holidays across the years spanned
+  for(let y=winStart.getFullYear(); y<=winEnd.getFullYear(); y++){
+    holidaysForYear(y).forEach(h=>{
+      const hd=parseYMD(h.date);
+      if(hd>=winStart && hd<=winEnd) push(h.date,{type:"holiday",name:h.name,sortKey:-1});
+    });
+  }
+  // events
+  events.forEach(ev=>{
+    expand(ev,winStart,winEnd).forEach(occStart=>{
+      const ds=ymd(occStart);
+      const occEnd=new Date(occStart.getTime()+durationMs(ev));
+      push(ds,{type:"event",ev,occStart,occEnd,sortKey:ev.allDay?0:occStart.getTime()});
+    });
+  });
+  Object.values(map).forEach(arr=>arr.sort((a,b)=>a.sortKey-b.sortKey));
+  return map;
+}
+
+/* =====================================================================
+   RENDER — CALENDAR
+   ===================================================================== */
+const grid=document.getElementById("grid");
+const periodEl=document.getElementById("period");
+
+function renderCalendar(){
+  periodEl.textContent = MONTHS[cursor.getMonth()]+" "+cursor.getFullYear();
+  const firstDow = new Date(cursor.getFullYear(),cursor.getMonth(),1).getDay();
+  const gridStart = addDays(new Date(cursor.getFullYear(),cursor.getMonth(),1), -firstDow);
+  const gridEnd = addDays(gridStart,41); // 6 weeks
+  const map = occurrencesByDate(gridStart, gridEnd);
+
+  grid.innerHTML="";
+  for(let i=0;i<42;i++){
+    const d=addDays(gridStart,i);
+    const ds=ymd(d);
+    const inMonth=d.getMonth()===cursor.getMonth();
+    const isToday=d.getTime()===today.getTime();
+    const cell=document.createElement("button");
+    cell.type="button";
+    cell.className="cell"+(inMonth?"":" cell--out")+(isToday?" cell--today":"");
+    cell.setAttribute("aria-label", DAYS_SHORT[d.getDay()]+" "+MONTHS_SHORT[d.getMonth()]+" "+d.getDate());
+
+    const num=document.createElement("span");
+    num.className="daynum"; num.textContent=d.getDate();
+    cell.appendChild(num);
+
+    const items=map[ds]||[];
+    // chips (desktop)
+    const chips=document.createElement("div"); chips.className="chips";
+    const dots=document.createElement("div"); dots.className="dots";
+    const MAXCHIP=3;
+    items.slice(0,MAXCHIP).forEach(it=>{
+      const chip=document.createElement("button");
+      chip.type="button";
+      if(it.type==="holiday"){
+        chip.className="chip chip--hol"; chip.textContent=it.name;
+        chip.onclick=(e)=>{e.stopPropagation();openHolidayDetail(it.name,ds);};
+        dots.insertAdjacentHTML("beforeend",'<i class="d-hol"></i>');
+      }else{
+        chip.className="chip chip--ev";
+        const time=it.ev.allDay? "" : `<span class="chip__time">${fmtTime(it.occStart)}</span> `;
+        chip.innerHTML=time+escapeHTML(it.ev.name);
+        chip.onclick=(e)=>{e.stopPropagation();openDetail(it);};
+        dots.insertAdjacentHTML("beforeend",'<i class="d-ev"></i>');
+      }
+      chips.appendChild(chip);
+    });
+    if(items.length>MAXCHIP){
+      const more=document.createElement("span"); more.className="more";
+      more.textContent="+"+(items.length-MAXCHIP)+" more";
+      chips.appendChild(more);
+      for(let k=MAXCHIP;k<items.length;k++) dots.insertAdjacentHTML("beforeend",
+        items[k].type==="holiday"?'<i class="d-hol"></i>':'<i class="d-ev"></i>');
+    }
+    cell.appendChild(chips);
+    cell.appendChild(dots);
+
+    cell.onclick=()=>openForm(null, ds);
+    grid.appendChild(cell);
+  }
+}
+
+/* =====================================================================
+   RENDER — LIST  (upcoming, ~120 days)
+   ===================================================================== */
+const listView=document.getElementById("listView");
+function renderList(){
+  const winStart=today;
+  const winEnd=addDays(today,120);
+  const map=occurrencesByDate(winStart,winEnd);
+  const dates=Object.keys(map).sort();
+  listView.innerHTML="";
+  if(!dates.length){
+    listView.innerHTML='<div class="list__empty">No upcoming events in the next 120 days. Use “New event” to add one.</div>';
+    return;
+  }
+  dates.forEach(ds=>{
+    const d=parseYMD(ds);
+    const group=document.createElement("div"); group.className="daygroup";
+    const head=document.createElement("div"); head.className="daygroup__head";
+    head.innerHTML=`<span class="num">${d.getDate()}</span> ${DAYS_SHORT[d.getDay()]} · ${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+    group.appendChild(head);
+
+    map[ds].forEach(it=>{
+      const row=document.createElement("button"); row.type="button"; row.className="row";
+      if(it.type==="holiday"){
+        row.innerHTML=`<span class="row__bar row__bar--hol"></span>
+          <span class="row__time">All day</span>
+          <span class="row__body">
+            <span class="row__title">${escapeHTML(it.name)} <span class="tag tag--hol">US Holiday</span></span>
+          </span>`;
+        row.onclick=()=>openHolidayDetail(it.name,ds);
+      }else{
+        const ev=it.ev;
+        const time=ev.allDay?"All day":fmtTime(it.occStart);
+        const fmtTag = ev.mode==="virtual"
+          ? '<span class="tag tag--virtual">Virtual</span>'
+          : '<span class="tag tag--inperson">In-person</span>';
+        const recTag = ev.recurrence!=="none" ? `<span class="tag tag--rec">${cap(ev.recurrence)}</span>` : "";
+        const where = ev.mode==="virtual"
+          ? (ev.link? "Online meeting":"")
+          : (ev.address? escapeHTML(ev.address):"");
+        row.innerHTML=`<span class="row__bar"></span>
+          <span class="row__time">${time}</span>
+          <span class="row__body">
+            <span class="row__title">${escapeHTML(ev.name)} ${fmtTag} ${recTag}</span>
+            ${where?`<span class="row__meta">${where}</span>`:""}
+          </span>`;
+        row.onclick=()=>openDetail(it);
+      }
+      group.appendChild(row);
+    });
+    listView.appendChild(group);
+  });
+}
+
+function render(){ view==="calendar"?renderCalendar():renderList(); }
+
+/* =====================================================================
+   DETAIL MODAL
+   ===================================================================== */
+const detailOverlay=document.getElementById("detailOverlay");
+const detailBody=document.getElementById("detailBody");
+const detailFoot=document.getElementById("detailFoot");
+const detailTitle=document.getElementById("detailTitle");
+
+function openHolidayDetail(name, ds){
+  const d=parseYMD(ds);
+  detailTitle.textContent="US Holiday";
+  detailBody.innerHTML=`<dl>
+    <div class="drow"><dt>Holiday</dt><dd>${escapeHTML(name)}</dd></div>
+    <div class="drow"><dt>Date</dt><dd>${DAYS_SHORT[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()} · All day</dd></div>
+  </dl>`;
+  detailFoot.innerHTML=`<button class="btn btn--outline" data-close>Close</button>`;
+  detailFoot.querySelector("[data-close]").onclick=closeDetail;
+  showOverlay(detailOverlay);
+}
+
+function openDetail(it){
+  const ev=it.ev;
+  detailTitle.textContent="Event details";
+  const dateLine = ev.allDay
+    ? `${fmtDateLong(it.occStart)}${sameDay(it.occStart,it.occEnd)?" · All day":` → ${fmtDateLong(it.occEnd)} · All day`}`
+    : `${fmtDateLong(it.occStart)}, ${fmtTime(it.occStart)} → ${sameDay(it.occStart,it.occEnd)?fmtTime(it.occEnd):fmtDateLong(it.occEnd)+", "+fmtTime(it.occEnd)}`;
+  let rows=`<div class="drow"><dt>When</dt><dd>${dateLine}</dd></div>`;
+  rows+=`<div class="drow"><dt>Format</dt><dd>${ev.mode==="virtual"?'<span class="tag tag--virtual">Virtual</span>':'<span class="tag tag--inperson">In-person</span>'}</dd></div>`;
+  if(ev.mode==="virtual" && ev.link) rows+=`<div class="drow"><dt>Link</dt><dd><a href="${encodeURI(ev.link)}" target="_blank" rel="noopener">${escapeHTML(ev.link)}</a></dd></div>`;
+  if(ev.mode==="inperson" && ev.address) rows+=`<div class="drow"><dt>Where</dt><dd>${escapeHTML(ev.address)}</dd></div>`;
+  if(ev.recurrence!=="none") rows+=`<div class="drow"><dt>Repeats</dt><dd>${cap(ev.recurrence)}${ev.until?` until ${fmtDateLong(parseYMD(ev.until))}`:""}</dd></div>`;
+  if(ev.description) rows+=`<div class="drow"><dt>Details</dt><dd>${escapeHTML(ev.description).replace(/\n/g,"<br>")}</dd></div>`;
+  detailBody.innerHTML=`<h3 style="font-family:var(--font-head);margin:.1rem 0 .8rem;font-size:var(--fs-lg)">${escapeHTML(ev.name)}</h3><dl>${rows}</dl>`;
+
+  detailFoot.innerHTML=`
+    <button class="btn btn--danger" data-del>Delete</button>
+    <div class="right">
+      <button class="btn btn--outline" data-ics>Export .ics</button>
+      <button class="btn btn--primary" data-edit>Edit</button>
+    </div>`;
+  detailFoot.querySelector("[data-del]").onclick=()=>{ deleteEvent(ev.id); closeDetail(); };
+  detailFoot.querySelector("[data-edit]").onclick=()=>{ closeDetail(); openForm(ev.id); };
+  detailFoot.querySelector("[data-ics]").onclick=()=>exportICS(ev);
+  showOverlay(detailOverlay);
+}
+function closeDetail(){ hideOverlay(detailOverlay); }
+
+/* =====================================================================
+   FORM MODAL
+   ===================================================================== */
+const fo=document.getElementById("formOverlay");
+const F={
+  name:document.getElementById("f-name"), desc:document.getElementById("f-desc"),
+  link:document.getElementById("f-link"), addr:document.getElementById("f-addr"),
+  allday:document.getElementById("f-allday"),
+  sdate:document.getElementById("f-sdate"), stime:document.getElementById("f-stime"),
+  edate:document.getElementById("f-edate"), etime:document.getElementById("f-etime"),
+  recur:document.getElementById("f-recur"), until:document.getElementById("f-until"),
+};
+const wrapLink=document.getElementById("wrapLink");
+const wrapAddr=document.getElementById("wrapAddr");
+const rowStart=document.getElementById("rowStart");
+const rowEnd=document.getElementById("rowEnd");
+const mV=document.getElementById("modeVirtual");
+const mP=document.getElementById("modeInperson");
+let formMode="virtual";
+
+function setMode(m){
+  formMode=m;
+  mV.setAttribute("aria-pressed", m==="virtual");
+  mP.setAttribute("aria-pressed", m==="inperson");
+  wrapLink.classList.toggle("hide", m!=="virtual");
+  wrapAddr.classList.toggle("hide", m!=="inperson");
+}
+mV.onclick=()=>setMode("virtual");
+mP.onclick=()=>setMode("inperson");
+
+function setAllDay(on){
+  F.stime.classList.toggle("hide", on);
+  F.etime.classList.toggle("hide", on);
+  rowStart.classList.toggle("row2--single", on);
+  rowEnd.classList.toggle("row2--single", on);
+  if(!on){
+    if(!F.stime.value) F.stime.value="09:00";
+    if(!F.etime.value) F.etime.value="10:00";
+  }
+}
+F.allday.onchange=()=>setAllDay(F.allday.checked);
+
+F.recur.onchange=updateUntilHint;
+F.until.onchange=updateUntilHint;
+function updateUntilHint(){
+  const u=document.getElementById("untilHint");
+  if(F.recur.value==="none"){ u.textContent=""; F.until.disabled=true; F.until.value=""; return; }
+  F.until.disabled=false;
+  u.textContent = F.until.value ? "" : "Repeat end is optional — leave blank for an open-ended series.";
+}
+
+function openForm(id, prefillDate){
+  editingId = id||null;
+  clearErrors();
+  document.getElementById("formTitle").textContent = id? "Edit event":"New event";
+  document.getElementById("formDelete").classList.toggle("hide", !id);
+
+  if(id){
+    const ev=events.find(e=>e.id===id);
+    F.name.value=ev.name; F.desc.value=ev.description||"";
+    setMode(ev.mode); F.link.value=ev.link||""; F.addr.value=ev.address||"";
+    F.allday.checked=ev.allDay; setAllDay(ev.allDay);
+    const s=evStart(ev), e=evEnd(ev);
+    F.sdate.value=ymd(s); F.edate.value=ymd(e);
+    F.stime.value=ev.allDay?"":`${pad(s.getHours())}:${pad(s.getMinutes())}`;
+    F.etime.value=ev.allDay?"":`${pad(e.getHours())}:${pad(e.getMinutes())}`;
+    F.recur.value=ev.recurrence; F.until.value=ev.until||"";
+  }else{
+    F.name.value=""; F.desc.value=""; setMode("virtual"); F.link.value=""; F.addr.value="";
+    F.allday.checked=false; setAllDay(false);
+    const base=prefillDate?parseYMD(prefillDate):new Date();
+    const sd=prefillDate?prefillDate:ymd(base);
+    F.sdate.value=sd; F.edate.value=sd;
+    const now=new Date(); const hh=prefillDate?9:Math.min(now.getHours()+1,22);
+    F.stime.value=`${pad(hh)}:00`; F.etime.value=`${pad(Math.min(hh+1,23))}:00`;
+    F.recur.value="none"; F.until.value="";
+  }
+  updateUntilHint();
+  showOverlay(fo);
+  setTimeout(()=>F.name.focus(),50);
+}
+function closeForm(){ hideOverlay(fo); }
+
+function clearErrors(){
+  ["e-name","e-link","e-addr","e-range"].forEach(id=>document.getElementById(id).classList.remove("show"));
+  [F.name,F.link,F.addr,F.sdate,F.edate].forEach(el=>el.classList.remove("err"));
+}
+function showErr(msgId, field){
+  document.getElementById(msgId).classList.add("show");
+  if(field) field.classList.add("err");
+}
+
+function validUrl(v){ try{ const u=new URL(v); return u.protocol==="http:"||u.protocol==="https:"; }catch(_){ return false; } }
+
+function collectDates(){
+  const allDay=F.allday.checked;
+  if(!F.sdate.value || !F.edate.value) return null;
+  if(allDay){
+    return { start:F.sdate.value, end:F.edate.value,
+             startD:parseYMD(F.sdate.value), endD:parseYMD(F.edate.value) };
+  }
+  const st=F.stime.value||"00:00", et=F.etime.value||"00:00";
+  const startD=new Date(`${F.sdate.value}T${st}`);
+  const endD=new Date(`${F.edate.value}T${et}`);
+  return { start:`${F.sdate.value}T${st}`, end:`${F.edate.value}T${et}`, startD, endD };
+}
+
+function saveForm(){
+  clearErrors();
+  let ok=true;
+  if(!F.name.value.trim()){ showErr("e-name",F.name); ok=false; }
+  if(formMode==="virtual" && F.link.value.trim() && !validUrl(F.link.value.trim())){ showErr("e-link",F.link); ok=false; }
+  if(formMode==="inperson" && !F.addr.value.trim()){ showErr("e-addr",F.addr); ok=false; }
+  const dates=collectDates();
+  if(!dates){ showErr("e-range",null); ok=false; }
+  else if(dates.endD < dates.startD){ showErr("e-range",F.edate); F.edate.classList.add("err"); ok=false; }
+  if(!ok) return;
+
+  const rec=F.recur.value;
+  const payload={
+    name:F.name.value.trim(),
+    description:F.desc.value.trim(),
+    mode:formMode,
+    link: formMode==="virtual"? F.link.value.trim():"",
+    address: formMode==="inperson"? F.addr.value.trim():"",
+    allDay:F.allday.checked,
+    start:dates.start, end:dates.end,
+    recurrence:rec,
+    until: rec!=="none"? (F.until.value||""):"",
+  };
+  if(editingId){
+    const ev=events.find(e=>e.id===editingId); Object.assign(ev,payload);
+  }else{
+    payload.id=uid++; events.push(payload);
+  }
+  closeForm(); render();
+}
+
+function deleteEvent(id){
+  events=events.filter(e=>e.id!==id);
+  render();
+}
+
+/* =====================================================================
+   ICS EXPORT
+   ===================================================================== */
+function icsEscape(s){ return String(s||"").replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\r?\n/g,"\\n"); }
+function icsDate(d){ return `${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`; }
+function icsDateLocal(d){ return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`; }
+function icsDay(d){ return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`; }
+
+function buildRRULE(ev){
+  if(ev.recurrence==="none") return null;
+  let r;
+  if(ev.recurrence==="weekly") r="FREQ=WEEKLY";
+  else if(ev.recurrence==="monthly") r="FREQ=MONTHLY";
+  else if(ev.recurrence==="quarterly") r="FREQ=MONTHLY;INTERVAL=3";
+  if(ev.until){ const u=addDays(parseYMD(ev.until),1); r+=";UNTIL="+icsDay(u)+"T000000Z"; }
+  return r;
+}
+
+function exportICS(ev){
+  const s=evStart(ev), e=evEnd(ev);
+  const lines=[
+    "BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Events Calendar Widget//EN","CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    "UID:evt-"+ev.id+"-"+Date.now()+"@events-widget",
+    "DTSTAMP:"+icsDate(new Date()),
+  ];
+  if(ev.allDay){
+    lines.push("DTSTART;VALUE=DATE:"+icsDay(s));
+    lines.push("DTEND;VALUE=DATE:"+icsDay(addDays(e,1))); // exclusive end
+  }else{
+    lines.push("DTSTART:"+icsDateLocal(s));
+    lines.push("DTEND:"+icsDateLocal(e));
+  }
+  const rule=buildRRULE(ev); if(rule) lines.push("RRULE:"+rule);
+  lines.push("SUMMARY:"+icsEscape(ev.name));
+  let desc=ev.description||"";
+  if(ev.mode==="virtual" && ev.link){ desc=(desc?desc+"\n\n":"")+"Join: "+ev.link; lines.push("URL:"+icsEscape(ev.link)); }
+  if(desc) lines.push("DESCRIPTION:"+icsEscape(desc));
+  const loc = ev.mode==="inperson"? ev.address : (ev.link? "Online":"");
+  if(loc) lines.push("LOCATION:"+icsEscape(loc));
+  lines.push("END:VEVENT","END:VCALENDAR");
+
+  const blob=new Blob([lines.join("\r\n")],{type:"text/calendar;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download=slug(ev.name)+".ics";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+
+/* =====================================================================
+   UTIL
+   ===================================================================== */
+function escapeHTML(s){ return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+function slug(s){ return (s||"event").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40)||"event"; }
+function sameDay(a,b){ return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
+function fmtDateLong(d){ return `${DAYS_SHORT[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`; }
+
+/* overlay open/close + focus + ESC + scroll lock */
+let lastFocused=null;
+function showOverlay(ov){ lastFocused=document.activeElement; ov.classList.add("open"); }
+function hideOverlay(ov){ ov.classList.remove("open"); if(lastFocused&&lastFocused.focus)lastFocused.focus(); }
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){ if(fo.classList.contains("open"))closeForm(); else if(detailOverlay.classList.contains("open"))closeDetail(); }
+});
+[fo,detailOverlay].forEach(ov=>ov.addEventListener("mousedown",e=>{ if(e.target===ov){ ov===fo?closeForm():closeDetail(); }}));
+
+/* =====================================================================
+   WIRING
+   ===================================================================== */
+document.getElementById("prev").onclick=()=>{ cursor=new Date(cursor.getFullYear(),cursor.getMonth()-1,1); renderCalendar(); };
+document.getElementById("next").onclick=()=>{ cursor=new Date(cursor.getFullYear(),cursor.getMonth()+1,1); renderCalendar(); };
+document.getElementById("today").onclick=()=>{ cursor=new Date(today.getFullYear(),today.getMonth(),1); if(view==="calendar")renderCalendar(); };
+document.getElementById("newBtn").onclick=()=>openForm(null);
+document.getElementById("formClose").onclick=closeForm;
+document.getElementById("formCancel").onclick=closeForm;
+document.getElementById("formSave").onclick=saveForm;
+document.getElementById("formDelete").onclick=()=>{ if(editingId){ deleteEvent(editingId); closeForm(); } };
+document.getElementById("detailClose").onclick=closeDetail;
+
+const vCal=document.getElementById("viewCal"), vList=document.getElementById("viewList");
+const calView=document.getElementById("calView");
+function setView(v){
+  view=v;
+  vCal.setAttribute("aria-pressed", v==="calendar");
+  vList.setAttribute("aria-pressed", v==="list");
+  calView.classList.toggle("hide", v!=="calendar");
+  listView.classList.toggle("hide", v!=="list");
+  render();
+}
+vCal.onclick=()=>setView("calendar");
+vList.onclick=()=>setView("list");
+
+/* boot */
+renderCalendar();
+})();
+</script>
+</body>
+</html>
